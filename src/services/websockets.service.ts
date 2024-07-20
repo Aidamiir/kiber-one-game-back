@@ -1,12 +1,12 @@
-import { OnGatewayConnection, OnGatewayDisconnect, SubscribeMessage, WebSocketGateway, WebSocketServer } from '@nestjs/websockets';
-import { Injectable } from '@nestjs/common';
-import { Server, Socket } from 'socket.io';
-import { PrismaClient } from '@prisma/client';
+import { Injectable } from '@nestjs/common'
+import { OnGatewayConnection, OnGatewayDisconnect, SubscribeMessage, WebSocketGateway, WebSocketServer } from '@nestjs/websockets'
+import { PrismaClient } from '@prisma/client'
+import { Server, Socket } from 'socket.io'
 
 @Injectable()
 @WebSocketGateway({
 	cors: {
-		origin: ['http://localhost:3000', 'http://localhost:4173'],
+		origin: ['http://localhost:3000', 'http://localhost:4173', 'http://87.228.17.48:3000'],
 		methods: ['GET', 'POST'],
 		credentials: true,
 	},
