@@ -1,0 +1,44 @@
+generator client {
+    provider = "prisma-client-js"
+    output   = "../node_modules/.prisma/client"
+}
+
+datasource db {
+    provider = "postgresql"
+    url      = env("DATABASE_URL")
+}
+
+model User {
+    id         String   @id @default(cuid())
+    created_at DateTime @default(now())
+    updated_at DateTime @updatedAt
+
+    telegram_id Int     @unique
+    username    String? @unique
+    first_name  String
+    last_name   String?
+
+    multitap_level Int @default(0)
+    multitap_price Int @default(100)
+
+    energy_limit_level Int @default(0)
+    energy_limit_price Int @default(100)
+
+    balance        Int @default(0)
+    balance_amount Int @default(1)
+
+    energy                 Int      @default(1000)
+    max_energy             Int      @default(1000)
+    energy_amount          Int      @default(1)
+    energy_recovery_amount Int      @default(1)
+    last_energy_update     DateTime @default(now())
+
+    quantity_energy_boost     Int      @default(3)
+    max_quantity_energy_boost Int      @default(3)
+    last_energy_boost_update  DateTime @default(now())
+
+    quantity_turbo_boost     Int      @default(3)
+    max_quantity_turbo_boost Int      @default(3)
+    last_turbo_boost_update  DateTime @default(now())
+    is_turbo_boost_active    Boolean  @default(false)
+}

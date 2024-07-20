@@ -1,0 +1,18 @@
+version: '3'
+services:
+
+  kog:
+    container_name: kog
+    image: postgres:16.2
+    restart: always
+    volumes:
+      - kog_data:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_PASSWORD=1234
+      - POSTGRES_USER=admin
+      - POSTGRES_DB=kog
+    ports:
+      - "5434:5432"
+
+volumes:
+  kog_data:
