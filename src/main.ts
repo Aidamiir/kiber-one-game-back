@@ -11,7 +11,7 @@ async function bootstrap() {
 
 	app.setGlobalPrefix('api');
 	app.enableCors({
-		origin: ['http://localhost:3000', 'http://localhost:4173', 'http://87.228.17.223:3000'],
+		origin: ['http://localhost:3000', 'http://localhost:4173', 'https://kiber-one-game.ru'],
 	});
 
 	await app.listen(8080);
