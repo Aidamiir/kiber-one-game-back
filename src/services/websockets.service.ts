@@ -19,6 +19,7 @@ export class WebsocketsService implements OnGatewayConnection, OnGatewayDisconne
 		const userId = client.handshake.query.userId as string;
 		if (userId) {
 			try {
+				console.log(userId, 'userId');
 				const user = await this.prisma.user.findUnique({ where: { id: userId } });
 				if (user) {
 					client.emit('updateEnergy', user.energy);
@@ -56,6 +57,7 @@ export class WebsocketsService implements OnGatewayConnection, OnGatewayDisconne
 					},
 				});
 
+				console.log(updatedUser.balance, updatedUser.energy);
 				client.emit('updateCoins', updatedUser.balance, balance_amount);
 				client.emit('updateEnergy', updatedUser.energy);
 			} else {
