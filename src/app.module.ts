@@ -1,19 +1,26 @@
-import { Module } from '@nestjs/common';
+import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 
-import { UsersModule } from '@/modules/users.module';
-import { AuthModule } from '@/modules/auth.module';
-import { WebsocketsModule } from '@/modules/websockets.module';
+import { AuthModule } from '@/modules/auth/auth.module';
+import { UsersModule } from '@/modules/users/users.module';
+import { LoggerMiddleware } from '@/common/middleware/logger.middleware';
+import { WebsocketModule } from '@/modules/users/websocket/websocket.module';
 
 @Module({
 	imports: [
 		ConfigModule.forRoot({
 			isGlobal: true,
 		}),
-		AuthModule,
 		UsersModule,
-		WebsocketsModule
+		AuthModule,
+		WebsocketModule,
 	],
 })
-export class AppModule {
+
+export class AppModule implements NestModule {
+	configure(consumer: MiddlewareConsumer) {
+		consumer
+			.apply(LoggerMiddleware)
+			.forRoutes('*');
+	}
 }

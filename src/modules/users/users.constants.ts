@@ -1,0 +1,5 @@
+export const MULTITAP_PRICE_COEFFICIENT = 2.5;
+export const ENERGY_LIMIT_PRICE_COEFFICIENT = 1.5;
+export const MAX_ENERGY_INCREASE_FACTOR = 1.1;
+export const BOOST_DURATION_MS = 10000;
+export const ONE_DAY_MS = 24 * 60 * 60 * 1000;

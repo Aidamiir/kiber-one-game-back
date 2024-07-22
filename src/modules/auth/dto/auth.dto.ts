@@ -1,19 +1,24 @@
 import { IsNotEmpty, IsNumber, IsOptional, IsString } from 'class-validator';
+import { ApiProperty } from '@nestjs/swagger';
 
 export class TelegramDto {
 	@IsNumber()
 	@IsNotEmpty()
+	@ApiProperty({ description: 'id' })
 	id: number;
 
 	@IsString()
 	@IsOptional()
+	@ApiProperty({ description: 'username' })
 	username?: string;
 
 	@IsString()
 	@IsNotEmpty()
-	first_name: string;
+	@ApiProperty({ description: 'firstName' })
+	firstName: string;
 
 	@IsString()
 	@IsOptional()
-	last_name?: string;
+	@ApiProperty({ description: 'lastName' })
+	lastName?: string;
 }
