@@ -1,47 +1,47 @@
 generator client {
-	provider = "prisma-client-js"
-	output   = "../node_modules/.prisma/client"
+    provider = "prisma-client-js"
+    output   = "../node_modules/.prisma/client"
 }
 
 datasource db {
-	provider = "postgresql"
-	url      = env("DATABASE_URL")
+    provider = "postgresql"
+    url      = env("DATABASE_URL")
 }
 
 model User {
-	id        String   @id @default(cuid())
-	createdAt DateTime @default(now())
-	updatedAt DateTime @updatedAt
+    id        String   @id @default(cuid())
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
 
-	telegramId Int     @unique
-	username   String? @unique
-	firstName  String
-	lastName   String?
+    telegramId Int     @unique
+    username   String? @unique
+    firstName  String
+    lastName   String?
 
-	multitapLevel Int @default(0)
-	multitapPrice Int @default(100)
+    multitapLevel Int @default(0)
+    multitapPrice Int @default(100)
 
-	energyLimitLevel Int @default(0)
-	energyLimitPrice Int @default(100)
+    energyLimitLevel Int @default(0)
+    energyLimitPrice Int @default(100)
 
-	balance       Int @default(0)
-	balanceAmount Int @default(1)
+    balance       Int @default(0)
+    balanceAmount Int @default(1)
 
-	energy               Int      @default(1000)
-	maxEnergy            Int      @default(1000)
-	energyAmount         Int      @default(1)
-	energyRecoveryAmount Int      @default(1)
-	lastEnergyUpdate     DateTime @default(now())
+    energy               Int      @default(1000)
+    maxEnergy            Int      @default(1000)
+    energyAmount         Int      @default(1)
+    energyRecoveryAmount Int      @default(1)
+    lastEnergyUpdate     DateTime @default(now())
 
-	quantityEnergyBoost    Int      @default(3)
-	maxQuantityEnergyBoost Int      @default(3)
-	lastEnergyBoostUpdate  DateTime @default(now())
+    quantityEnergyBoost    Int      @default(3)
+    maxQuantityEnergyBoost Int      @default(3)
+    lastEnergyBoostUpdate  DateTime @default(now())
 
-	quantityTurboBoost    Int      @default(3)
-	maxQuantityTurboBoost Int      @default(3)
-	lastTurboBoostUpdate  DateTime @default(now())
-	isTurboBoostActive    Boolean  @default(false)
+    quantityTurboBoost    Int      @default(3)
+    maxQuantityTurboBoost Int      @default(3)
+    lastTurboBoostUpdate  DateTime @default(now())
+    isTurboBoostActive    Boolean  @default(false)
 
-	@@index([username])
-	@@index([id])
+    @@index([username])
+    @@index([id])
 }
