@@ -14,7 +14,6 @@ export class AuthController {
 	@Post('sign-in/telegram')
 	@ApiOperation({ summary: 'Sign in with Telegram' })
 	public async signInWithTelegram(@Body() dto: TelegramDto) {
-		console.log(dto);
 		return this.authService.signInWithTelegram(dto);
 	}
 }
