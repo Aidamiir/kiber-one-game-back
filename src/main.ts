@@ -9,6 +9,12 @@ import { AllExceptionsFilter } from '@/common/filters/all-exceptions.filter';
 async function bootstrap() {
 	const app = await NestFactory.create(AppModule);
 	const configService = app.get(ConfigService);
+	const port = configService.get<number>('PORT', 8080);
+	const corsOrigins = configService.get<string>('CORS_ORIGINS');
+
+	if (!corsOrigins) {
+		throw new Error('CORS_ORIGINS configuration is missing');
+	}
 
 	app.setGlobalPrefix('api');
 
@@ -20,13 +26,6 @@ async function bootstrap() {
 
 	const document = SwaggerModule.createDocument(app, config);
 	SwaggerModule.setup('api-docs', app, document);
-
-	const port = configService.get<number>('PORT', 8080);
-	const corsOrigins = configService.get<string>('CORS_ORIGINS');
-
-	if (!corsOrigins) {
-		throw new Error('CORS_ORIGINS configuration is missing');
-	}
 
 	app.enableCors({ origin: corsOrigins.split(',').map(origin => origin.trim()) });
 	app.useGlobalFilters(new AllExceptionsFilter());
