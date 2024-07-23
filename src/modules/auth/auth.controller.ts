@@ -1,8 +1,8 @@
-import {Body, Controller, HttpCode, Post} from '@nestjs/common';
-import {ApiOperation, ApiTags} from '@nestjs/swagger';
+import { Body, Controller, HttpCode, Post } from '@nestjs/common';
+import { ApiOperation, ApiTags } from '@nestjs/swagger';
 
-import {AuthService} from '@/modules/auth/auth.service';
-import {TelegramDto} from '@/modules/auth/dto/auth.dto';
+import { AuthService } from '@/modules/auth/auth.service';
+import { TelegramDto } from '@/modules/auth/dto/auth.dto';
 
 @ApiTags('auth')
 @Controller('auth')
