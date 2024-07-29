@@ -7,5 +7,4 @@ import { WebsocketGateway } from '@/modules/users/websocket/websocket.gateway';
 	imports: [UsersModule],
 	providers: [WebsocketGateway],
 })
-export class WebsocketModule {
-}
+export class WebsocketModule {}

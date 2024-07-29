@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
 
-import { UsersModule } from '@/modules/users/users.module';
 import { AuthService } from '@/modules/auth/auth.service';
+import { UsersModule } from '@/modules/users/users.module';
 import { AuthController } from '@/modules/auth/auth.controller';
 import { JwtTokensModule } from '@/modules/auth/jwt-tokens/jwt-tokens.module';
 
@@ -11,5 +11,4 @@ import { JwtTokensModule } from '@/modules/auth/jwt-tokens/jwt-tokens.module';
 	providers: [AuthService],
 })
 
-export class AuthModule {
-}
+export class AuthModule {}

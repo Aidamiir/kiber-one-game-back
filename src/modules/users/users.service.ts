@@ -1,18 +1,18 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+
 import { UsersRepository } from '@/modules/users/users.repository';
-import { TelegramDto } from '@/modules/auth/dto/auth.dto';
-import {
-	BOOST_DURATION_MS,
-	ENERGY_LIMIT_PRICE_COEFFICIENT,
-	MAX_ENERGY_INCREASE_FACTOR,
-	MULTITAP_PRICE_COEFFICIENT,
-	ONE_DAY_MS,
-} from '@/modules/users/users.constants';
+import { AuthTelegramDto } from '@/modules/auth/dto/auth-telegram.dto';
 
 @Injectable()
 export class UsersService {
-	constructor(private readonly usersRepository: UsersRepository) {
-	}
+	private readonly MULTITAP_PRICE_COEFFICIENT = 2.5;
+	private readonly ENERGY_LIMIT_PRICE_COEFFICIENT = 1.5;
+	private readonly MAX_ENERGY_INCREASE_FACTOR = 1.1;
+	private readonly BOOST_DURATION_MS = 10000;
+	private readonly ONE_HOUR_MS = 60 * 60 * 1000;
+	private readonly ONE_DAY_MS = 24 * this.ONE_HOUR_MS;
+
+	constructor(private readonly usersRepository: UsersRepository) {}
 
 	public async getById(id: string) {
 		const user = await this.usersRepository.getById(id);
@@ -22,11 +22,7 @@ export class UsersService {
 		return user;
 	}
 
-	public async getByTelegramId(telegramId: number) {
-		return await this.usersRepository.getByTelegramId(telegramId);
-	}
-
-	public async create(dto: TelegramDto) {
+	public async create(dto: AuthTelegramDto) {
 		return await this.usersRepository.create(dto);
 	}
 
@@ -41,7 +37,7 @@ export class UsersService {
 			const data = {
 				multitapLevel: user.multitapLevel + 1,
 				balance: user.balance - user.multitapPrice,
-				multitapPrice: Math.floor(user.multitapPrice * MULTITAP_PRICE_COEFFICIENT),
+				multitapPrice: Math.floor(user.multitapPrice * this.MULTITAP_PRICE_COEFFICIENT),
 				balanceAmount: user.balanceAmount + 1,
 				energyAmount: user.energyAmount + 1,
 			};
@@ -60,9 +56,9 @@ export class UsersService {
 
 			const data = {
 				energyLimitLevel: user.energyLimitLevel + 1,
-				energyLimitPrice: Math.floor(user.energyLimitPrice * ENERGY_LIMIT_PRICE_COEFFICIENT),
+				energyLimitPrice: Math.floor(user.energyLimitPrice * this.ENERGY_LIMIT_PRICE_COEFFICIENT),
 				balance: user.balance - user.energyLimitPrice,
-				maxEnergy: Math.floor(user.maxEnergy * MAX_ENERGY_INCREASE_FACTOR),
+				maxEnergy: Math.floor(user.maxEnergy * this.MAX_ENERGY_INCREASE_FACTOR),
 			};
 
 			return await this.usersRepository.upgradeEnergyLimit(
@@ -141,7 +137,7 @@ export class UsersService {
 				setTimeout(async () => {
 					await this.usersRepository.deactivateTurboBoost(prisma, userId, originalBalanceAmount, originalEnergyAmount);
 					resolve();
-				}, BOOST_DURATION_MS);
+				}, this.BOOST_DURATION_MS);
 			});
 
 			return {
@@ -160,11 +156,11 @@ export class UsersService {
 			const secondsSinceLastEnergyBoost = (now.getTime() - lastEnergyBoostUpdate.getTime()) / 1000;
 			const secondsSinceLastTurboBoost = (now.getTime() - lastTurboBoostUpdate.getTime()) / 1000;
 
-			const energyBoostTimeLeft = ONE_DAY_MS - secondsSinceLastEnergyBoost * 1000;
-			const turboBoostTimeLeft = ONE_DAY_MS - secondsSinceLastTurboBoost * 1000;
+			const energyBoostTimeLeft = this.ONE_DAY_MS - secondsSinceLastEnergyBoost * 1000;
+			const turboBoostTimeLeft = this.ONE_DAY_MS - secondsSinceLastTurboBoost * 1000;
 
-			const oneDayPassedEnergy = secondsSinceLastEnergyBoost >= ONE_DAY_MS / 1000;
-			const oneDayPassedTurbo = secondsSinceLastTurboBoost >= ONE_DAY_MS / 1000;
+			const oneDayPassedEnergy = secondsSinceLastEnergyBoost >= this.ONE_DAY_MS / 1000;
+			const oneDayPassedTurbo = secondsSinceLastTurboBoost >= this.ONE_DAY_MS / 1000;
 
 			const { quantityEnergyBoost, quantityTurboBoost } = await this.usersRepository.updateUser(prisma, {
 				id: userId,
@@ -177,25 +173,21 @@ export class UsersService {
 			return {
 				quantityEnergyBoost,
 				quantityTurboBoost,
-				energyBoostTimeLeft: oneDayPassedEnergy ? 0 : Math.max(0, Math.floor(energyBoostTimeLeft / 3600000)),
-				turboBoostTimeLeft: oneDayPassedTurbo ? 0 : Math.max(0, Math.floor(turboBoostTimeLeft / 3600000)),
+				energyBoostTimeLeft: oneDayPassedEnergy ? 0 : Math.max(0, Math.floor(energyBoostTimeLeft / this.ONE_HOUR_MS)),
+				turboBoostTimeLeft: oneDayPassedTurbo ? 0 : Math.max(0, Math.floor(turboBoostTimeLeft / this.ONE_HOUR_MS)),
 			};
 		});
 	}
 
-	async getUserEnergy(userId: string): Promise<number> {
-		const user = await this.usersRepository.getById(userId);
-
-		if (!user) throw new NotFoundException('User not found');
+	async getUserEnergy(userId: string) {
+		const user = await this.getById(userId);
 
 		return user.energy;
 	}
 
-	async changeBalance(userId: string): Promise<{ balance: number; energy: number }> {
+	async changeBalance(userId: string) {
 		return this.usersRepository.$transaction(async (prisma) => {
 			const user = await this.getById(userId);
-
-			if (!user) throw new NotFoundException('User not found');
 
 			if (user.energy <= 0) throw new BadRequestException('Energy is 0, cannot change balance.');
 
@@ -213,11 +205,9 @@ export class UsersService {
 		});
 	}
 
-	async recoverEnergy(userId: string): Promise<{ energy: number }> {
+	async recoverEnergy(userId: string) {
 		return this.usersRepository.$transaction(async (prisma) => {
 			const user = await this.getById(userId);
-
-			if (!user) throw new NotFoundException('User not found');
 
 			const { energy } = await this.usersRepository.updateUser(prisma, {
 				id: userId,

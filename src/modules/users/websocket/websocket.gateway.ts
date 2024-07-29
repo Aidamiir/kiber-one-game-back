@@ -3,7 +3,7 @@ import { Injectable } from '@nestjs/common';
 import { Server, Socket } from 'socket.io';
 import { UsersService } from '@/modules/users/users.service';
 
-// todo: проставить префикс
+// todo: проставить префикс и брать origins из env
 @Injectable()
 @WebSocketGateway({
 	cors: {

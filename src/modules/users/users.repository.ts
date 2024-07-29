@@ -1,11 +1,15 @@
 import { Injectable } from '@nestjs/common';
+
 import { PrismaService } from '@/modules/prisma/prisma.service';
-import { TelegramDto } from '@/modules/auth/dto/auth.dto';
+import { AuthTelegramDto } from '@/modules/auth/dto/auth-telegram.dto';
+
+import type { UpdateUserDataInterface } from '@/modules/users/interfaces/update-user-data.interface';
+import type { UpgradeMultitapDataInterface } from '@/modules/users/interfaces/upgrade-multitap-data.interface';
+import type { UpgradeEnergyLimitDataInterface } from '@/modules/users/interfaces/upgrade-energy-limit-data.interface';
 
 @Injectable()
 export class UsersRepository {
-	constructor(private readonly prisma: PrismaService) {
-	}
+	constructor(private readonly prisma: PrismaService) {}
 
 	public async getById(id: string) {
 		return this.prisma.user.findUnique({ where: { id } });
@@ -15,49 +19,44 @@ export class UsersRepository {
 		return this.prisma.user.findUnique({ where: { telegramId } });
 	}
 
-	public async create(dto: TelegramDto) {
+	public async create(dto: AuthTelegramDto) {
+		const { id, username, firstName, lastName } = dto;
+
 		return this.prisma.user.create({
 			data: {
-				telegramId: dto.id,
-				username: dto.username,
-				firstName: dto.firstName,
-				lastName: dto.lastName,
+				telegramId: id,
+				username,
+				firstName,
+				lastName,
 			},
 		});
 	}
 
-	public async upgradeMultitap(prisma: PrismaService, userId: string, data: {
-		multitapLevel: number,
-		balance: number,
-		multitapPrice: number,
-		balanceAmount: number,
-		energyAmount: number
-	}) {
+	public async upgradeMultitap(prisma: PrismaService, userId: string, data: UpgradeMultitapDataInterface) {
+		const { multitapLevel, multitapPrice, balance, balanceAmount, energyAmount } = data;
+
 		return prisma.user.update({
 			where: { id: userId },
 			data: {
-				multitapLevel: data.multitapLevel,
-				balance: data.balance,
-				multitapPrice: data.multitapPrice,
-				balanceAmount: data.balanceAmount,
-				energyAmount: data.energyAmount,
+				multitapLevel,
+				balance,
+				multitapPrice,
+				balanceAmount,
+				energyAmount,
 			},
 		});
 	}
 
-	public async upgradeEnergyLimit(prisma: PrismaService, userId: string, data: {
-		energyLimitLevel: number,
-		energyLimitPrice: number,
-		balance: number,
-		maxEnergy: number
-	}) {
+	public async upgradeEnergyLimit(prisma: PrismaService, userId: string, data: UpgradeEnergyLimitDataInterface) {
+		const { energyLimitLevel, energyLimitPrice, maxEnergy, balance } = data;
+
 		return prisma.user.update({
 			where: { id: userId },
 			data: {
-				energyLimitLevel: data.energyLimitLevel,
-				energyLimitPrice: data.energyLimitPrice,
-				balance: data.balance,
-				maxEnergy: data.maxEnergy,
+				energyLimitLevel,
+				energyLimitPrice,
+				balance,
+				maxEnergy,
 			},
 		});
 	}
@@ -102,18 +101,7 @@ export class UsersRepository {
 		});
 	}
 
-	public async updateUser(prisma: PrismaService, data: {
-		id: string;
-		balance?: number;
-		energy?: number;
-		balanceAmount?: number;
-		energyAmount?: number;
-		lastEnergyUpdate?: Date;
-		quantityEnergyBoost?: number;
-		quantityTurboBoost?: number;
-		lastEnergyBoostUpdate?: Date;
-		lastTurboBoostUpdate?: Date;
-	}) {
+	public async updateUser(prisma: PrismaService, data: UpdateUserDataInterface) {
 		return prisma.user.update({
 			where: { id: data.id },
 			data: data,
