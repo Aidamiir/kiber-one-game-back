@@ -9,36 +9,39 @@ datasource db {
 }
 
 model User {
-    id         String   @id @default(cuid())
-    created_at DateTime @default(now())
-    updated_at DateTime @updatedAt
+    id        String   @id @default(cuid())
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
 
-    telegram_id Int     @unique
-    username    String? @unique
-    first_name  String
-    last_name   String?
+    telegramId Int     @unique
+    username   String? @unique
+    firstName  String
+    lastName   String?
 
-    multitap_level Int @default(0)
-    multitap_price Int @default(100)
+    multitapLevel Int @default(0)
+    multitapPrice Int @default(100)
 
-    energy_limit_level Int @default(0)
-    energy_limit_price Int @default(100)
+    energyLimitLevel Int @default(0)
+    energyLimitPrice Int @default(100)
 
-    balance        Int @default(0)
-    balance_amount Int @default(1)
+    balance       Int @default(0)
+    balanceAmount Int @default(1)
 
-    energy                 Int      @default(1000)
-    max_energy             Int      @default(1000)
-    energy_amount          Int      @default(1)
-    energy_recovery_amount Int      @default(1)
-    last_energy_update     DateTime @default(now())
+    energy               Int      @default(1000)
+    maxEnergy            Int      @default(1000)
+    energyAmount         Int      @default(1)
+    energyRecoveryAmount Int      @default(1)
+    lastEnergyUpdate     DateTime @default(now())
 
-    quantity_energy_boost     Int      @default(3)
-    max_quantity_energy_boost Int      @default(3)
-    last_energy_boost_update  DateTime @default(now())
+    quantityEnergyBoost    Int      @default(3)
+    maxQuantityEnergyBoost Int      @default(3)
+    lastEnergyBoostUpdate  DateTime @default(now())
 
-    quantity_turbo_boost     Int      @default(3)
-    max_quantity_turbo_boost Int      @default(3)
-    last_turbo_boost_update  DateTime @default(now())
-    is_turbo_boost_active    Boolean  @default(false)
+    quantityTurboBoost    Int      @default(3)
+    maxQuantityTurboBoost Int      @default(3)
+    lastTurboBoostUpdate  DateTime @default(now())
+    isTurboBoostActive    Boolean  @default(false)
+
+    @@index([username])
+    @@index([id])
 }
