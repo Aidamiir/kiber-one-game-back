@@ -1,7 +1,5 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
-
 import { UsersRepository } from '@/modules/users/users.repository';
-import { AuthTelegramDto } from '@/modules/auth/dto/auth-telegram.dto';
 
 @Injectable()
 export class UsersService {
@@ -12,149 +10,107 @@ export class UsersService {
 	private readonly ONE_HOUR_MS = 60 * 60 * 1000;
 	private readonly ONE_DAY_MS = 24 * this.ONE_HOUR_MS;
 
-	constructor(private readonly usersRepository: UsersRepository) {}
+	constructor(
+		private readonly usersRepository: UsersRepository,
+	) {}
 
-	public async getById(id: string) {
-		const user = await this.usersRepository.getById(id);
-
+	public async getUserById(userId: string) {
+		const user = await this.usersRepository.getById(userId);
 		if (!user) throw new NotFoundException('User not found');
-
 		return user;
-	}
-
-	public async create(dto: AuthTelegramDto) {
-		return await this.usersRepository.create(dto);
 	}
 
 	public async upgradeMultitap(userId: string) {
 		return this.usersRepository.$transaction(async (prisma) => {
-			const user = await this.getById(userId);
+			const user = await this.getUserById(userId);
+			if (user.balance.balance < user.upgrades.multitapPrice) throw new BadRequestException('Insufficient funds');
 
-			if (user.balance < user.multitapPrice) {
-				throw new BadRequestException('Insufficient funds');
-			}
-
-			const data = {
-				multitapLevel: user.multitapLevel + 1,
-				balance: user.balance - user.multitapPrice,
-				multitapPrice: Math.floor(user.multitapPrice * this.MULTITAP_PRICE_COEFFICIENT),
-				balanceAmount: user.balanceAmount + 1,
-				energyAmount: user.energyAmount + 1,
-			};
-
-			return await this.usersRepository.upgradeMultitap(prisma, userId, data);
+			return await this.usersRepository.upgradeMultitap(prisma, userId, {
+				multitapLevel: user.upgrades.multitapLevel + 1,
+				balance: user.balance.balance - user.upgrades.multitapPrice,
+				multitapPrice: Math.floor(user.upgrades.multitapPrice * this.MULTITAP_PRICE_COEFFICIENT),
+				balanceAmount: user.balance.balanceAmount + 1,
+				energyAmount: user.energy.energyAmount + 1,
+			});
 		});
 	}
 
 	public async upgradeEnergyLimit(userId: string) {
 		return this.usersRepository.$transaction(async (prisma) => {
-			const user = await this.getById(userId);
+			const user = await this.getUserById(userId);
+			if (user.balance.balance < user.upgrades.energyLimitPrice) throw new BadRequestException('Insufficient funds');
 
-			if (user.balance < user.energyLimitPrice) {
-				throw new BadRequestException('Insufficient funds');
-			}
-
-			const data = {
-				energyLimitLevel: user.energyLimitLevel + 1,
-				energyLimitPrice: Math.floor(user.energyLimitPrice * this.ENERGY_LIMIT_PRICE_COEFFICIENT),
-				balance: user.balance - user.energyLimitPrice,
-				maxEnergy: Math.floor(user.maxEnergy * this.MAX_ENERGY_INCREASE_FACTOR),
-			};
-
-			return await this.usersRepository.upgradeEnergyLimit(
-				prisma,
-				userId,
-				data,
-			);
+			return await this.usersRepository.upgradeEnergyLimit(prisma, userId, {
+				energyLimitLevel: user.upgrades.energyLimitLevel + 1,
+				energyLimitPrice: Math.floor(user.upgrades.energyLimitPrice * this.ENERGY_LIMIT_PRICE_COEFFICIENT),
+				balance: user.balance.balance - user.upgrades.energyLimitPrice,
+				maxEnergy: Math.floor(user.energy.maxEnergy * this.MAX_ENERGY_INCREASE_FACTOR),
+			});
 		});
 	}
 
 	public async updateUserEnergy(userId: string) {
 		return this.usersRepository.$transaction(async (prisma) => {
-			const user = await this.getById(userId);
-			const lastEnergyUpdate = new Date();
-			const secondsSinceLastUpdate = (lastEnergyUpdate.getTime() - new Date(user.lastEnergyUpdate).getTime()) / 1000;
-			const recoveryAmount = Math.floor(secondsSinceLastUpdate / 2) * user.energyRecoveryAmount;
-			const energy = Math.min(user.energy + recoveryAmount, user.maxEnergy);
+			const user = await this.getUserById(userId);
+			const secondsSinceLastUpdate = (Date.now() - new Date(user.energy.lastEnergyUpdate).getTime()) / 1000;
+			const recoveryAmount = Math.floor(secondsSinceLastUpdate / 2) * user.energy.energyRecoveryAmount;
+			const energy = Math.min(user.energy.energy + recoveryAmount, user.energy.maxEnergy);
 
 			return await this.usersRepository.updateUser(prisma, {
 				id: userId,
 				energy,
-				lastEnergyUpdate,
+				lastEnergyUpdate: new Date(),
 			});
 		});
 	}
 
 	public async getTopUserByCoins() {
 		const user = await this.usersRepository.getTopUserByCoins();
-		const { firstName, lastName, balance } = user;
-
-		if (!user) {
-			throw new NotFoundException('Users not found');
-		}
+		if (!user) throw new NotFoundException('Users not found');
 
 		return {
-			firstName,
-			lastName,
-			balance,
+			firstName: user.firstName,
+			lastName: user.lastName,
+			balance: user.balance.balance,
 		};
 	}
 
 	public async useEnergyBoost(userId: string) {
 		return this.usersRepository.$transaction(async (prisma) => {
-			const user = await this.getById(userId);
+			const user = await this.getUserById(userId);
+			if (user.boosts.quantityEnergyBoost <= 0) throw new BadRequestException('No available energy boosts');
 
-			if (user.quantityEnergyBoost <= 0) {
-				throw new BadRequestException('No available energy boosts');
-			}
-
-			const { quantityEnergyBoost } = await this.usersRepository.useEnergyBoost(prisma, userId, user.maxEnergy);
-
-			return {
-				quantityEnergyBoost,
-			};
+			const { quantityEnergyBoost } = await this.usersRepository.useEnergyBoost(prisma, userId, user.energy.maxEnergy);
+			return { quantityEnergyBoost };
 		});
 	}
 
 	public async useTurboBoost(userId: string) {
-		return this.usersRepository.$transaction(async (prisma) => {
-			const user = await this.getById(userId);
+		const user = await this.getUserById(userId);
 
-			if (user.isTurboBoostActive) {
-				throw new BadRequestException('Turbo boost is already active');
-			}
+		if (user.boosts.isTurboBoostActive) throw new BadRequestException('Turbo boost is already active');
+		if (user.boosts.quantityTurboBoost <= 0) throw new BadRequestException('No available turbo boosts');
 
-			if (user.quantityTurboBoost <= 0) {
-				throw new BadRequestException('No available turbo boosts');
-			}
-
-			const originalBalanceAmount = user.balanceAmount;
-			const originalEnergyAmount = user.energyAmount;
-
-			await this.usersRepository.activateTurboBoost(prisma, userId);
-
-			await new Promise<void>((resolve) => {
-				setTimeout(async () => {
-					await this.usersRepository.deactivateTurboBoost(prisma, userId, originalBalanceAmount, originalEnergyAmount);
-					resolve();
-				}, this.BOOST_DURATION_MS);
-			});
-
-			return {
-				quantityTurboBoost: user.quantityTurboBoost - 1,
-			};
+		const updatedUser = await this.usersRepository.$transaction(async (prisma) => {
+			return await this.usersRepository.activateTurboBoost(prisma, userId);
 		});
+
+		setTimeout(async () => {
+			try {
+				await this.usersRepository.deactivateTurboBoost(userId, user.balance.balanceAmount, user.energy.energyAmount);
+			}
+			catch {}
+		}, this.BOOST_DURATION_MS);
+
+		return { quantityTurboBoost: updatedUser.boosts.quantityTurboBoost - 1 };
 	}
 
 	public async restoreBoosts(userId: string) {
 		return this.usersRepository.$transaction(async (prisma) => {
-			const user = await this.getById(userId);
+			const user = await this.getUserById(userId);
 			const now = new Date();
-			const lastEnergyBoostUpdate = new Date(user.lastEnergyBoostUpdate);
-			const lastTurboBoostUpdate = new Date(user.lastTurboBoostUpdate);
-
-			const secondsSinceLastEnergyBoost = (now.getTime() - lastEnergyBoostUpdate.getTime()) / 1000;
-			const secondsSinceLastTurboBoost = (now.getTime() - lastTurboBoostUpdate.getTime()) / 1000;
+			const secondsSinceLastEnergyBoost = (now.getTime() - new Date(user.boosts.lastEnergyBoostUpdate).getTime()) / 1000;
+			const secondsSinceLastTurboBoost = (now.getTime() - new Date(user.boosts.lastTurboBoostUpdate).getTime()) / 1000;
 
 			const energyBoostTimeLeft = this.ONE_DAY_MS - secondsSinceLastEnergyBoost * 1000;
 			const turboBoostTimeLeft = this.ONE_DAY_MS - secondsSinceLastTurboBoost * 1000;
@@ -162,61 +118,25 @@ export class UsersService {
 			const oneDayPassedEnergy = secondsSinceLastEnergyBoost >= this.ONE_DAY_MS / 1000;
 			const oneDayPassedTurbo = secondsSinceLastTurboBoost >= this.ONE_DAY_MS / 1000;
 
-			const { quantityEnergyBoost, quantityTurboBoost } = await this.usersRepository.updateUser(prisma, {
+			const updatedUser = await this.usersRepository.updateUser(prisma, {
 				id: userId,
-				quantityEnergyBoost: oneDayPassedEnergy ? user.maxQuantityEnergyBoost : user.quantityEnergyBoost,
-				quantityTurboBoost: oneDayPassedTurbo ? user.maxQuantityTurboBoost : user.quantityTurboBoost,
+				quantityEnergyBoost: oneDayPassedEnergy ? user.boosts.maxQuantityEnergyBoost : user.boosts.quantityEnergyBoost,
+				quantityTurboBoost: oneDayPassedTurbo ? user.boosts.maxQuantityTurboBoost : user.boosts.quantityTurboBoost,
 				lastEnergyBoostUpdate: now,
 				lastTurboBoostUpdate: now,
 			});
 
 			return {
-				quantityEnergyBoost,
-				quantityTurboBoost,
+				quantityEnergyBoost: updatedUser.boosts.quantityEnergyBoost,
+				quantityTurboBoost: updatedUser.boosts.quantityTurboBoost,
 				energyBoostTimeLeft: oneDayPassedEnergy ? 0 : Math.max(0, Math.floor(energyBoostTimeLeft / this.ONE_HOUR_MS)),
 				turboBoostTimeLeft: oneDayPassedTurbo ? 0 : Math.max(0, Math.floor(turboBoostTimeLeft / this.ONE_HOUR_MS)),
 			};
 		});
 	}
 
-	async getUserEnergy(userId: string) {
-		const user = await this.getById(userId);
-
-		return user.energy;
-	}
-
-	async changeBalance(userId: string) {
-		return this.usersRepository.$transaction(async (prisma) => {
-			const user = await this.getById(userId);
-
-			if (user.energy <= 0) throw new BadRequestException('Energy is 0, cannot change balance.');
-
-			const newEnergy = Math.max(user.energy - user.energyAmount, 0);
-			const { balance, energy } = await this.usersRepository.updateUser(prisma, {
-				id: userId,
-				balance: user.balance + user.balanceAmount,
-				energy: newEnergy,
-			});
-
-			return {
-				balance,
-				energy,
-			};
-		});
-	}
-
-	async recoverEnergy(userId: string) {
-		return this.usersRepository.$transaction(async (prisma) => {
-			const user = await this.getById(userId);
-
-			const { energy } = await this.usersRepository.updateUser(prisma, {
-				id: userId,
-				energy: Math.min(user.energy + user.energyRecoveryAmount, user.maxEnergy),
-			});
-
-			return {
-				energy,
-			};
-		});
+	public async getUserEnergy(userId: string) {
+		const { energy } = await this.getUserById(userId);
+		return energy.energy;
 	}
 }

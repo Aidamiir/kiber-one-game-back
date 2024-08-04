@@ -1,7 +1,14 @@
 import { IsNotEmpty, IsNumber, IsOptional, IsString } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
-export class AuthTelegramDto {
+export class SignInTelegramDto {
+	@IsNumber()
+	@IsNotEmpty()
+	@ApiProperty({ description: 'id' })
+	id: number;
+}
+
+export class SignUpTelegramDto {
 	@IsNumber()
 	@IsNotEmpty()
 	@ApiProperty({ description: 'id' })
@@ -21,4 +28,9 @@ export class AuthTelegramDto {
 	@IsOptional()
 	@ApiProperty({ description: 'lastName' })
 	lastName?: string;
+
+	@IsString()
+	@IsNotEmpty()
+	@ApiProperty({ description: 'city' })
+	city: string;
 }

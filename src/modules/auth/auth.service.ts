@@ -1,8 +1,8 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 
 import { UsersService } from '@/modules/users/users.service';
 import { UsersRepository } from '@/modules/users/users.repository';
-import { AuthTelegramDto } from '@/modules/auth/dto/auth-telegram.dto';
+import { SignInTelegramDto, SignUpTelegramDto } from '@/modules/auth/dto/sign-in-telegram.dto';
 import { JwtTokensService } from '@/modules/auth/jwt-tokens/jwt-tokens.service';
 
 @Injectable()
@@ -13,21 +13,32 @@ export class AuthService {
 		private readonly jwtTokensService: JwtTokensService,
 	) {}
 
-	public async signInWithTelegram(dto: AuthTelegramDto) {
+	public async signInWithTelegram(dto: SignInTelegramDto) {
 		let user = await this.usersRepository.getByTelegramId(dto.id);
 
-		if (!user) {
-			user = await this.usersService.create(dto);
-		}
-		else {
-			user = await this.usersService.updateUserEnergy(user.id);
-		}
+		if (!user) throw new NotFoundException('User not found');
 
-		const { telegramId, ...rest } = user;
+		user = await this.usersService.updateUserEnergy(user.id);
+
+		const { id } = user;
 		const accessToken = this.jwtTokensService.createAccessToken(user.id);
 
 		return {
-			user: rest,
+			id,
+			accessToken,
+		};
+	}
+
+	public async signUpWithTelegram(dto: SignUpTelegramDto) {
+		const user = await this.usersRepository.create(dto);
+
+		if (!user) throw Error('Error creating user');
+
+		const { id } = user;
+		const accessToken = this.jwtTokensService.createAccessToken(user.id);
+
+		return {
+			id,
 			accessToken,
 		};
 	}

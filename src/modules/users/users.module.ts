@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { BullModule } from '@nestjs/bull';
 
 import { PrismaModule } from '@/modules/prisma/prisma.module';
 import { UsersService } from '@/modules/users/users.service';
@@ -9,6 +10,11 @@ import { UsersRepository } from '@/modules/users/users.repository';
 	controllers: [UsersController],
 	providers: [UsersRepository, UsersService],
 	exports: [UsersService, UsersRepository],
-	imports: [PrismaModule]
+	imports: [
+		PrismaModule,
+		BullModule.registerQueue({
+			name: 'boost',
+		}),
+	],
 })
 export class UsersModule {}
